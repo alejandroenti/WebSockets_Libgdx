@@ -80,8 +80,14 @@ public class Main extends ApplicationAdapter {
 
         // Create touchpad only on Android
         if (Gdx.app.getType() == Application.ApplicationType.Android) {
-            touchpadBgTexture = createCircleTexture(200, new Color(0.3f, 0.3f, 0.3f, 0.5f));
-            touchpadKnobTexture = createCircleTexture(80, new Color(0.7f, 0.7f, 0.7f, 0.8f));
+            float density = Gdx.graphics.getDensity();
+            int bgSize = (int) (200 * density);
+            int knobSize = (int) (80 * density);
+            int padSize = (int) (200 * density);
+            int padMargin = (int) (15 * density);
+
+            touchpadBgTexture = createCircleTexture(bgSize, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+            touchpadKnobTexture = createCircleTexture(knobSize, new Color(0.7f, 0.7f, 0.7f, 0.8f));
 
             Drawable touchpadBg = new TextureRegionDrawable(new TextureRegion(touchpadBgTexture));
             Drawable touchpadKnob = new TextureRegionDrawable(new TextureRegion(touchpadKnobTexture));
@@ -90,8 +96,8 @@ public class Main extends ApplicationAdapter {
             touchpadStyle.background = touchpadBg;
             touchpadStyle.knob = touchpadKnob;
 
-            touchpad = new Touchpad(10, touchpadStyle);
-            touchpad.setBounds(15, 15, 200, 200);
+            touchpad = new Touchpad(5 * density, touchpadStyle);
+            touchpad.setBounds(padMargin, padMargin, padSize, padSize);
 
             uiStage = new Stage(new ScreenViewport());
             uiStage.addActor(touchpad);
