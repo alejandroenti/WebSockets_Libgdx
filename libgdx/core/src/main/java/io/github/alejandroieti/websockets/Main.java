@@ -78,23 +78,25 @@ public class Main extends ApplicationAdapter {
         spriteSize = 2;
         isFlipped = false;
 
-        // Create touchpad textures programmatically
-        touchpadBgTexture = createCircleTexture(200, new Color(0.3f, 0.3f, 0.3f, 0.5f));
-        touchpadKnobTexture = createCircleTexture(80, new Color(0.7f, 0.7f, 0.7f, 0.8f));
+        // Create touchpad only on Android
+        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+            touchpadBgTexture = createCircleTexture(200, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+            touchpadKnobTexture = createCircleTexture(80, new Color(0.7f, 0.7f, 0.7f, 0.8f));
 
-        Drawable touchpadBg = new TextureRegionDrawable(new TextureRegion(touchpadBgTexture));
-        Drawable touchpadKnob = new TextureRegionDrawable(new TextureRegion(touchpadKnobTexture));
+            Drawable touchpadBg = new TextureRegionDrawable(new TextureRegion(touchpadBgTexture));
+            Drawable touchpadKnob = new TextureRegionDrawable(new TextureRegion(touchpadKnobTexture));
 
-        Touchpad.TouchpadStyle touchpadStyle = new Touchpad.TouchpadStyle();
-        touchpadStyle.background = touchpadBg;
-        touchpadStyle.knob = touchpadKnob;
+            Touchpad.TouchpadStyle touchpadStyle = new Touchpad.TouchpadStyle();
+            touchpadStyle.background = touchpadBg;
+            touchpadStyle.knob = touchpadKnob;
 
-        touchpad = new Touchpad(10, touchpadStyle);
-        touchpad.setBounds(15, 15, 200, 200);
+            touchpad = new Touchpad(10, touchpadStyle);
+            touchpad.setBounds(15, 15, 200, 200);
 
-        uiStage = new Stage(new ScreenViewport());
-        uiStage.addActor(touchpad);
-        Gdx.input.setInputProcessor(uiStage);
+            uiStage = new Stage(new ScreenViewport());
+            uiStage.addActor(touchpad);
+            Gdx.input.setInputProcessor(uiStage);
+        }
 
         initializeWebSocketServer();
     }
@@ -111,7 +113,9 @@ public class Main extends ApplicationAdapter {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
-        uiStage.getViewport().update(width, height, true);
+        if (uiStage != null) {
+            uiStage.getViewport().update(width, height, true);
+        }
     }
 
     @Override
@@ -119,8 +123,10 @@ public class Main extends ApplicationAdapter {
         input();
         logic();
         draw();
-        uiStage.act(Gdx.graphics.getDeltaTime());
-        uiStage.draw();
+        if (uiStage != null) {
+            uiStage.act(Gdx.graphics.getDeltaTime());
+            uiStage.draw();
+        }
     }
 
     @Override
@@ -128,16 +134,18 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
         backgroundTexture.dispose();
         walkingAnimationTexture.dispose();
-        uiStage.dispose();
-        touchpadBgTexture.dispose();
-        touchpadKnobTexture.dispose();
+        if (uiStage != null) {
+            uiStage.dispose();
+            touchpadBgTexture.dispose();
+            touchpadKnobTexture.dispose();
+        }
     }
 
     private void input() {
-        // Read from touchpad (knobPercentX: -1 left, +1 right, 0 center)
-        float knobX = touchpad.getKnobPercentX();
+        // Read from touchpad on Android
+        float knobX = touchpad != null ? touchpad.getKnobPercentX() : 0;
 
-        // Also keep keyboard support for desktop
+        // Keyboard support for desktop
         boolean rightPressed = Gdx.input.isKeyPressed(Input.Keys.RIGHT);
         boolean leftPressed = Gdx.input.isKeyPressed(Input.Keys.LEFT);
 
