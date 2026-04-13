@@ -5,12 +5,18 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.czyzby.websocket.WebSocket;
 import com.github.czyzby.websocket.WebSocketListener;
 import com.github.czyzby.websocket.WebSockets;
@@ -39,6 +45,11 @@ public class Main extends ApplicationAdapter {
     private boolean isFlipped;
     private int spriteSize;
 
+    private Stage uiStage;
+    private Touchpad touchpad;
+    private Texture touchpadBgTexture;
+    private Texture touchpadKnobTexture;
+
     WebSocket socket;
     String address = "localhost";
     int port = 8888;
@@ -56,7 +67,7 @@ public class Main extends ApplicationAdapter {
             walkingAnimationTexture.getHeight()
         );
 
-        walkingAnimation = new Animation<TextureRegion>(0.1f, walkingFrames[0]);
+        walkingAnimation = new Animation<>(0.1f, walkingFrames[0]);
         stateTime = 0f;
 
         posX = 0f;
@@ -67,12 +78,40 @@ public class Main extends ApplicationAdapter {
         spriteSize = 2;
         isFlipped = false;
 
+        // Create touchpad textures programmatically
+        touchpadBgTexture = createCircleTexture(200, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+        touchpadKnobTexture = createCircleTexture(80, new Color(0.7f, 0.7f, 0.7f, 0.8f));
+
+        Drawable touchpadBg = new TextureRegionDrawable(new TextureRegion(touchpadBgTexture));
+        Drawable touchpadKnob = new TextureRegionDrawable(new TextureRegion(touchpadKnobTexture));
+
+        Touchpad.TouchpadStyle touchpadStyle = new Touchpad.TouchpadStyle();
+        touchpadStyle.background = touchpadBg;
+        touchpadStyle.knob = touchpadKnob;
+
+        touchpad = new Touchpad(10, touchpadStyle);
+        touchpad.setBounds(15, 15, 200, 200);
+
+        uiStage = new Stage(new ScreenViewport());
+        uiStage.addActor(touchpad);
+        Gdx.input.setInputProcessor(uiStage);
+
         initializeWebSocketServer();
+    }
+
+    private Texture createCircleTexture(int diameter, Color color) {
+        Pixmap pixmap = new Pixmap(diameter, diameter, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fillCircle(diameter / 2, diameter / 2, diameter / 2 - 1);
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
     }
 
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
+        uiStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -80,6 +119,8 @@ public class Main extends ApplicationAdapter {
         input();
         logic();
         draw();
+        uiStage.act(Gdx.graphics.getDeltaTime());
+        uiStage.draw();
     }
 
     @Override
@@ -87,20 +128,27 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
         backgroundTexture.dispose();
         walkingAnimationTexture.dispose();
+        uiStage.dispose();
+        touchpadBgTexture.dispose();
+        touchpadKnobTexture.dispose();
     }
 
     private void input() {
+        // Read from touchpad (knobPercentX: -1 left, +1 right, 0 center)
+        float knobX = touchpad.getKnobPercentX();
+
+        // Also keep keyboard support for desktop
         boolean rightPressed = Gdx.input.isKeyPressed(Input.Keys.RIGHT);
         boolean leftPressed = Gdx.input.isKeyPressed(Input.Keys.LEFT);
 
-        if (rightPressed) {
+        if (knobX > 0.2f || rightPressed) {
             if (dir != 1) {
                 dir = 1;
                 if (isFlipped) {
                     flipAnimationFrames(walkingFrames[0]);
                 }
             }
-        } else if (leftPressed) {
+        } else if (knobX < -0.2f || leftPressed) {
             if (dir != -1) {
                 dir = -1;
                 if (!isFlipped) {
