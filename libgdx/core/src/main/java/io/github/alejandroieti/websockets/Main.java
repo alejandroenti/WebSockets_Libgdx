@@ -1,5 +1,6 @@
 package io.github.alejandroieti.websockets;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -10,6 +11,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.github.czyzby.websocket.WebSocket;
+import com.github.czyzby.websocket.WebSocketListener;
+import com.github.czyzby.websocket.WebSockets;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
@@ -29,9 +33,15 @@ public class Main extends ApplicationAdapter {
 
     private float speed;
     private float posX;
+    private float lastPosXSend;
+    private float posXdelta;
     private int dir;
     private boolean isFlipped;
     private int spriteSize;
+
+    WebSocket socket;
+    String address = "localhost";
+    int port = 8888;
 
     @Override
     public void create() {
@@ -50,10 +60,14 @@ public class Main extends ApplicationAdapter {
         stateTime = 0f;
 
         posX = 0f;
+        lastPosXSend = posX;
+        posXdelta = 0.1f;
         dir = 1;
         speed = 1.2f;
         spriteSize = 2;
         isFlipped = false;
+
+        initializeWebSocketServer();
     }
 
     @Override
@@ -103,6 +117,11 @@ public class Main extends ApplicationAdapter {
             0 :
             stateTime + Gdx.graphics.getDeltaTime();
         posX += speed * dir * Gdx.graphics.getDeltaTime();
+
+        if (posX - lastPosXSend >= posXdelta || lastPosXSend - posX >= posXdelta) {
+            lastPosXSend = posX;
+            socket.send("Nom: Hero, Posx: " + posX);
+        }
     }
 
     private void draw() {
@@ -125,5 +144,54 @@ public class Main extends ApplicationAdapter {
             frame.flip(true, false);
         }
         isFlipped = !isFlipped;
+    }
+
+    private void initializeWebSocketServer() {
+        if (Gdx.app.getType() == Application.ApplicationType.Android)
+            // en Android el host és accessible per 10.0.2.2
+            address = "10.0.2.2";
+        socket = WebSockets.newSocket(WebSockets.toWebSocketUrl(address, port));
+        // ULL: si és a traves de HTTPS , el protocol seria wss enlloc de ws
+        //socket = WebSockets.newSocket(WebSockets.toSecureWebSocketUrl(address, port));
+        socket.setSendGracefully(false);
+        socket.addListener((WebSocketListener) new MyWSListener());
+        socket.connect();
+    }
+}
+
+
+/////////////////////////////////////////////
+// COMUNICACIONS (rebuda de missatges)
+/////////////////////////////////////////////
+class MyWSListener implements WebSocketListener {
+
+    @Override
+    public boolean onOpen(WebSocket webSocket) {
+        System.out.println("Opening...");
+        return false;
+    }
+
+    @Override
+    public boolean onClose(WebSocket webSocket, int closeCode, String reason) {
+        System.out.println("Closing...");
+        return false;
+    }
+
+    @Override
+    public boolean onMessage(WebSocket webSocket, String packet) {
+        System.out.println("Message: " + packet);
+        return false;
+    }
+
+    @Override
+    public boolean onMessage(WebSocket webSocket, byte[] packet) {
+        System.out.println("Message: " + packet);
+        return false;
+    }
+
+    @Override
+    public boolean onError(WebSocket webSocket, Throwable error) {
+        System.out.println("ERROR: " + error.toString());
+        return false;
     }
 }
