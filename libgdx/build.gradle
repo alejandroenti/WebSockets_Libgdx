@@ -1,4 +1,4 @@
-buildscript {
+  buildscript {
   repositories {
     mavenCentral()
     gradlePluginPortal()
@@ -22,6 +22,13 @@ allprojects {
       outputDir = file('build/classes/java/main')
       testOutputDir = file('build/classes/java/test')
     }
+  }
+
+  ext {
+    wsVersion = '1.9.10.3'
+  }
+  repositories {
+    maven { url "https://jitpack.io" }
   }
 }
 

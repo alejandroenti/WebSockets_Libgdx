@@ -56,6 +56,9 @@ dependencies {
   implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
   implementation "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
   implementation "com.google.jsinterop:jsinterop-annotations:2.1.0:sources"
+  implementation "com.github.MrStahlfelge.gdx-websockets:core:$wsVersion:sources"
+  implementation "com.github.MrStahlfelge.gdx-websockets:html:$wsVersion"
+  implementation "com.github.MrStahlfelge.gdx-websockets:html:$wsVersion:sources"
   implementation project(':core')
 
   constraints {
